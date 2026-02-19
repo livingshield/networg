@@ -1,0 +1,24 @@
+# Credentials and secrets
+.env
+config.json
+
+# Temporary / generated files
+page_*.png
+*.log
+
+# Node.js
+node_modules/
+
+# TypeScript build output (keeping JS in repo for deployment)
+# out/
+# dist/
+
+# VS Code
+.vscode/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Power Platform managed solution builds (large zips)
+solutions/Managed_Builds/*.zip

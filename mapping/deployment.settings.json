@@ -1,0 +1,14 @@
+{
+    "webresources": [
+        {
+            "source": "out/PowerApps/Entities/NonConformity/Forms/nonconformity.form.js",
+            "target": "new_/scripts/nonconformity.form.js",
+            "displayName": "NonConformity Form Script"
+        },
+        {
+            "source": "out/PowerApps/Entities/CorrectiveAction/Forms/correctiveaction.form.js",
+            "target": "new_/scripts/correctiveaction.form.js",
+            "displayName": "Corrective Action Form Script"
+        }
+    ]
+}
