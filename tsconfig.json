@@ -1,0 +1,29 @@
+{
+    "compilerOptions": {
+        "target": "ES2015",
+        "module": "none",
+        "lib": [
+            "ES2015",
+            "DOM"
+        ],
+        "outDir": "./out",
+        "rootDir": "./src",
+        "strict": true,
+        "noImplicitAny": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": true,
+        "sourceMap": true,
+        "declaration": false,
+        "types": [
+            "xrm"
+        ]
+    },
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules",
+        "out",
+        "tests"
+    ]
+}
