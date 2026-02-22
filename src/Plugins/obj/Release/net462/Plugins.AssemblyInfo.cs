@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Networg.ConstructSafe.Plugins")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+58eb09aca6b85eab66b2e94864bf262d99164012")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ff1035776ef5d8aeddf717af8bb18be67d361ffc")]
 [assembly: System.Reflection.AssemblyProductAttribute("Networg.ConstructSafe.Plugins")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Networg.ConstructSafe.Plugins")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

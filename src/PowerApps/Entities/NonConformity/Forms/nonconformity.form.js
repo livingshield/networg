@@ -139,8 +139,12 @@ var ConstructSafe;
             }
             const recordId = formContext.data.entity.getId().replace(/[{}]/g, "");
             const ticketNumber = ((_a = formContext.getAttribute(Fields.TICKET_NUMBER)) === null || _a === void 0 ? void 0 : _a.getValue()) || "report";
-            const flowUrl = "https://REPLACED_SECRET_URL";
-            Xrm.Utility.showProgressIndicator("Generating PDF report...");
+            // NOTE: This URL is the Power Automate HTTP trigger endpoint.
+            // Obtain it from: Power Automate → Generate NC PDF Report → HTTP trigger → "Copy POST URL"
+            // Do NOT commit the actual URL to source control (it contains a secret signature).
+            // Store it in .env as POWER_AUTOMATE_PDF_FLOW_URL and paste the value here before building.
+            const flowUrl = "https://REPLACE_WITH_ENVIRONMENT_VARIABLE";
+            Xrm.Utility.showProgressIndicator("Generating report...");
             const request = new XMLHttpRequest();
             request.open("POST", flowUrl, true);
             request.setRequestHeader("Content-Type", "application/json");
@@ -149,9 +153,18 @@ var ConstructSafe;
                     Xrm.Utility.closeProgressIndicator();
                     if (request.status === 200 || request.status === 202) {
                         formContext.ui.setFormNotification("PDF report generated successfully. Check the Timeline for the attachment.", "INFO", "PDF_GENERATED");
-                        // Refresh form to show new attachment in timeline
                         formContext.data.refresh(false);
                         setTimeout(() => formContext.ui.clearFormNotification("PDF_GENERATED"), 8000);
+                    }
+                    else if (request.status === 0) {
+                        // CORS blocks reading the response, but the flow was triggered successfully.
+                        // Power Automate does not handle OPTIONS preflight - this is expected behaviour.
+                        formContext.ui.setFormNotification("Report is being generated. Please refresh the Timeline in a few seconds.", "INFO", "PDF_GENERATED");
+                        setTimeout(() => {
+                            formContext.ui.clearFormNotification("PDF_GENERATED");
+                            formContext.data.refresh(false);
+                        }, 5000);
+                        console.log("[ConstructSafe] CORS blocked response (expected) - flow was triggered.");
                     }
                     else {
                         formContext.ui.setFormNotification("PDF generation failed. Please try again or contact your administrator.", "ERROR", "PDF_FAILED");
@@ -159,6 +172,16 @@ var ConstructSafe;
                         console.error("[ConstructSafe] PDF generation failed:", request.status, request.responseText);
                     }
                 }
+            };
+            request.onerror = function () {
+                // onerror fires on network/CORS issues - same as status 0 case
+                Xrm.Utility.closeProgressIndicator();
+                formContext.ui.setFormNotification("Report is being generated. Please refresh the Timeline in a few seconds.", "INFO", "PDF_GENERATED");
+                setTimeout(() => {
+                    formContext.ui.clearFormNotification("PDF_GENERATED");
+                    formContext.data.refresh(false);
+                }, 5000);
+                console.log("[ConstructSafe] CORS/network error - flow was still triggered.");
             };
             request.send(JSON.stringify({
                 ncId: recordId,

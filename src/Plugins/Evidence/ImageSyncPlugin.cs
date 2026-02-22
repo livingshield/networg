@@ -50,12 +50,8 @@ namespace Networg.ConstructSafe.Plugins.Evidence
                 tracingService.Trace("[ImageSyncPlugin] Starting... Depth={0}, Message={1}",
                     context.Depth, context.MessageName);
 
-                // Anti-loop: skip if triggered by our own Update
-                if (context.Depth > 1)
-                {
-                    tracingService.Trace("[ImageSyncPlugin] Depth > 1, skipping.");
-                    return;
-                }
+                // Note: No depth check needed. Anti-loop relies on reconciliation:
+                // after sync, both columns have data → Case B → skip.
 
                 if (!(context.InputParameters["Target"] is Entity targetEntity))
                 {
@@ -111,18 +107,11 @@ namespace Networg.ConstructSafe.Plugins.Evidence
                     tracingService.Trace("[ImageSyncPlugin] Case A: Attachment→ImagePreview");
                     WriteImagePreview(service, evidenceId, attachmentBytes, tracingService);
                 }
-                else if (hasAttachment && attachmentIsImage && hasImagePreview)
+                else if (hasAttachment && hasImagePreview)
                 {
-                    // Case B: Both have data. Check if attachment changed (different size = update preview)
-                    if (attachmentBytes.Length != imagePreviewBytes.Length)
-                    {
-                        tracingService.Trace("[ImageSyncPlugin] Case B: Attachment changed→update ImagePreview");
-                        WriteImagePreview(service, evidenceId, attachmentBytes, tracingService);
-                    }
-                    else
-                    {
-                        tracingService.Trace("[ImageSyncPlugin] Case B: Both in sync, nothing to do.");
-                    }
+                    // Case B: Both have data → already in sync, nothing to do
+                    // This is the natural loop terminator for async execution
+                    tracingService.Trace("[ImageSyncPlugin] Case B: Both have data, in sync. Nothing to do.");
                 }
                 else if (hasAttachment && !attachmentIsImage && hasImagePreview)
                 {

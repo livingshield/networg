@@ -166,9 +166,9 @@ namespace ConstructSafe.NonConformity {
         // Obtain it from: Power Automate → Generate NC PDF Report → HTTP trigger → "Copy POST URL"
         // Do NOT commit the actual URL to source control (it contains a secret signature).
         // Store it in .env as POWER_AUTOMATE_PDF_FLOW_URL and paste the value here before building.
-        const flowUrl = "POWER_AUTOMATE_PDF_FLOW_URL_PLACEHOLDER";
+        const flowUrl = "https://REPLACE_WITH_ENVIRONMENT_VARIABLE";
 
-        Xrm.Utility.showProgressIndicator("Generating PDF report...");
+        Xrm.Utility.showProgressIndicator("Generating report...");
 
         const request = new XMLHttpRequest();
         request.open("POST", flowUrl, true);

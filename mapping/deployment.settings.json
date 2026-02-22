@@ -9,6 +9,11 @@
             "source": "out/PowerApps/Entities/CorrectiveAction/Forms/correctiveaction.form.js",
             "target": "new_/scripts/correctiveaction.form.js",
             "displayName": "Corrective Action Form Script"
+        },
+        {
+            "source": "out/PowerApps/Entities/Evidence/Forms/evidence.form.js",
+            "target": "new_/scripts/evidence.form.js",
+            "displayName": "Evidence Form Script"
         }
     ]
 }
