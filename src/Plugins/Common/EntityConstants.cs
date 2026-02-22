@@ -118,9 +118,11 @@ namespace Networg.ConstructSafe.Plugins.Common
         public struct Attributes
         {
             public const string Name = "new_name";
-            public const string NonConformity = "new_nonconformity";   // Lookup → Non-Conformity
-            public const string FileType = "new_filetype";             // Global OptionSet: new_nonconformityfiletype
-            public const string Attachment = "new_attachment";         // File
+            public const string NonConformity = "new_nonconformity";       // Lookup → Non-Conformity
+            public const string CorrectiveAction = "new_correctiveaction"; // Lookup → Corrective Action
+            public const string FileType = "new_filetype";                 // Global OptionSet: new_nonconformityfiletype
+            public const string Attachment = "new_attachment";             // File
+            public const string ImagePreview = "new_imagepreview";     // Image (synced from Attachment by plugin)
             public const string Notes = "new_notes";
         }
     }

@@ -99,6 +99,9 @@ namespace ConstructSafe.NonConformity {
             setDefaultDateReported(formContext);
         }
 
+        // Ticket Number is auto-generated – always read-only
+        setFieldLocked(formContext, Fields.TICKET_NUMBER, true);
+
         console.log("[ConstructSafe] NonConformity form loaded successfully.");
     }
 

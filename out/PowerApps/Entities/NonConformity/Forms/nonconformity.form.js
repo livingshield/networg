@@ -89,6 +89,8 @@ var ConstructSafe;
             if (formContext.ui.getFormType() === 1 /* XrmEnum.FormType.Create */) {
                 setDefaultDateReported(formContext);
             }
+            // Ticket Number is auto-generated – always read-only
+            setFieldLocked(formContext, Fields.TICKET_NUMBER, true);
             console.log("[ConstructSafe] NonConformity form loaded successfully.");
         }
         NonConformity.onLoad = onLoad;
@@ -137,7 +139,11 @@ var ConstructSafe;
             }
             const recordId = formContext.data.entity.getId().replace(/[{}]/g, "");
             const ticketNumber = ((_a = formContext.getAttribute(Fields.TICKET_NUMBER)) === null || _a === void 0 ? void 0 : _a.getValue()) || "report";
-            const flowUrl = "https://REPLACED_SECRET_URL";
+            // NOTE: This URL is the Power Automate HTTP trigger endpoint.
+            // Obtain it from: Power Automate → Generate NC PDF Report → HTTP trigger → "Copy POST URL"
+            // Do NOT commit the actual URL to source control (it contains a secret signature).
+            // Store it in .env as POWER_AUTOMATE_PDF_FLOW_URL and paste the value here before building.
+            const flowUrl = "POWER_AUTOMATE_PDF_FLOW_URL_PLACEHOLDER";
             Xrm.Utility.showProgressIndicator("Generating PDF report...");
             const request = new XMLHttpRequest();
             request.open("POST", flowUrl, true);

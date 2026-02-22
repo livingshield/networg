@@ -1,6 +1,6 @@
 # Networg – ConstructSafe Non-Conformity Manager
 
-Power Apps Model-Driven Application for **ConstructSafe Inc.** to track and manage non-conformities in construction projects.
+Power Apps Model-Driven + Canvas Application for **ConstructSafe Inc.** to track and manage non-conformities in construction projects.
 
 > **NETWORG Power Apps Candidate Review Assignment**
 
@@ -17,8 +17,11 @@ networg/
 │   │       ├── CorrectiveAction/
 │   │       │   └── Forms/
 │   │       └── Evidence/
-│   │           └── Forms/
+│   │           └── Forms/          # ImagePreview sync trigger
 │   ├── Plugins/            # C# - backend server-side logic
+│   │   ├── Common/         # Shared constants (EntityConstants.cs)
+│   │   ├── NonConformity/  # AutoNumber, Notification plugins
+│   │   └── Evidence/       # ImageSync plugin
 │   └── Static/             # CSS, icons, images
 ├── solutions/
 │   ├── Networg_Unpacked/   # Source-controlled XML of the solution
@@ -32,7 +35,7 @@ networg/
 ├── mapping/
 │   └── deployment.settings.json   # Maps local JS → Dataverse Web Resources
 ├── docs/
-│   └── analyza_zadani.md   # Assignment analysis
+│   └── task_progress.md    # Project progress tracking
 ├── package.json            # Node.js / TypeScript dependencies
 ├── tsconfig.json           # TypeScript compiler configuration
 └── .gitignore
@@ -49,31 +52,49 @@ npm run build
 
 # Watch mode (auto-rebuild on changes)
 npm run watch
+
+# Build C# Plugins (Release)
+cd src/Plugins && dotnet build --configuration Release
 ```
 
 ## 🏗️ Tech Stack
 
 | Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **App** | Power Apps (Model-Driven) | Main UI |
-| **Data** | Dataverse | Tables, relationships |
+|-------|-----------|---------
+| **Model-Driven App** | Power Apps | Main management UI |
+| **Canvas App** | Power Apps | Field worker mobile UI |
+| **Data** | Dataverse | Tables, relationships, file storage |
 | **Frontend Logic** | TypeScript | Form scripts, ribbon commands |
-| **Backend Logic** | C# Plugins | Autonumbering, server-side validation |
+| **Backend Logic** | C# Plugins | AutoNumber, Notification, ImageSync |
 | **Automation** | Power Automate | Notifications, PDF generation |
 | **Source Control** | Git + GitHub | Version management |
 
 ## 📊 Data Model
 
-- **Non-Conformity** – Main entity (type, severity, status, location)
+- **Non-Conformity** – Main entity (type, severity, status, location, ticket number)
 - **Corrective Action** – Remediation steps linked to NC (N:1)
-- **Evidence** – Attachments/photos linked to NC (N:1)
+- **Evidence** – Attachments/photos linked to NC and CA (N:1)
+  - `Attachment` (File) – stores all file types
+  - `ImagePreview` (Image) – synced copy for Canvas App display
+
+## 🔌 Plugins
+
+| Plugin | Entity | Message | Description |
+|--------|--------|---------|-------------|
+| **AutoNumberPlugin** | Non-Conformity | Create | Generates NC-XXXXX ticket numbers |
+| **NotificationPlugin** | Non-Conformity | Create/Update | Emails assigned manager |
+| **ImageSyncPlugin** | Evidence | Create/Update | Bidirectional Attachment↔ImagePreview sync |
 
 ## 🚀 Status
 
 - [x] Environment Setup (NetworgTest)
 - [x] Dataverse Data Model (3 tables + global choices)
 - [x] Model-Driven App (ConstructSafe Manager)
+- [x] TypeScript Business Logic (NonConformity form)
 - [x] Git Repository Structure
-- [ ] TypeScript Business Logic
+- [x] AutoNumbering Plugin (NC-XXXXX)
+- [x] Canvas App (ConstructSafe Field App)
+- [x] ImageSync Plugin (File↔Image)
+- [ ] Evidence Form JS (ImagePreview trigger)
 - [ ] Power Automate Flows
-- [ ] Optional/Bonus Tasks
+- [ ] Presentation
