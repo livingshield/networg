@@ -13,6 +13,15 @@
  * @module NonConformityForm
  * @author Jan Kytyr
  */
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var ConstructSafe;
 (function (ConstructSafe) {
     var NonConformity;
@@ -124,70 +133,74 @@ var ConstructSafe;
          * Triggers the Power Automate flow to generate a PDF summary report.
          * Called from a Command Bar button on the Non-Conformity form.
          *
-         * The flow URL must be updated after creating the Power Automate flow.
+         * Now fetches the URL from a Dataverse Environment Variable named 'new_PDFGenerationFlowURL'.
          *
          * @param primaryControl - The form context passed by Command Bar
          */
         function generatePDF(primaryControl) {
-            var _a;
-            const formContext = primaryControl;
-            // Ensure record is saved before generating PDF
-            if (formContext.data.entity.getIsDirty()) {
-                formContext.ui.setFormNotification("Please save the record before generating a PDF report.", "WARNING", "PDF_SAVE_FIRST");
-                setTimeout(() => formContext.ui.clearFormNotification("PDF_SAVE_FIRST"), 5000);
-                return;
-            }
-            const recordId = formContext.data.entity.getId().replace(/[{}]/g, "");
-            const ticketNumber = ((_a = formContext.getAttribute(Fields.TICKET_NUMBER)) === null || _a === void 0 ? void 0 : _a.getValue()) || "report";
-            // NOTE: This URL is the Power Automate HTTP trigger endpoint.
-            // Obtain it from: Power Automate → Generate NC PDF Report → HTTP trigger → "Copy POST URL"
-            // Do NOT commit the actual URL to source control (it contains a secret signature).
-            // Store it in .env as POWER_AUTOMATE_PDF_FLOW_URL and paste the value here before building.
-            const flowUrl = "https://REPLACE_WITH_ENVIRONMENT_VARIABLE";
-            Xrm.Utility.showProgressIndicator("Generating report...");
-            const request = new XMLHttpRequest();
-            request.open("POST", flowUrl, true);
-            request.setRequestHeader("Content-Type", "application/json");
-            request.onreadystatechange = function () {
-                if (request.readyState === 4) {
-                    Xrm.Utility.closeProgressIndicator();
-                    if (request.status === 200 || request.status === 202) {
-                        formContext.ui.setFormNotification("PDF report generated successfully. Check the Timeline for the attachment.", "INFO", "PDF_GENERATED");
-                        formContext.data.refresh(false);
-                        setTimeout(() => formContext.ui.clearFormNotification("PDF_GENERATED"), 8000);
-                    }
-                    else if (request.status === 0) {
-                        // CORS blocks reading the response, but the flow was triggered successfully.
-                        // Power Automate does not handle OPTIONS preflight - this is expected behaviour.
-                        formContext.ui.setFormNotification("Report is being generated. Please refresh the Timeline in a few seconds.", "INFO", "PDF_GENERATED");
-                        setTimeout(() => {
-                            formContext.ui.clearFormNotification("PDF_GENERATED");
-                            formContext.data.refresh(false);
-                        }, 5000);
-                        console.log("[ConstructSafe] CORS blocked response (expected) - flow was triggered.");
-                    }
-                    else {
-                        formContext.ui.setFormNotification("PDF generation failed. Please try again or contact your administrator.", "ERROR", "PDF_FAILED");
-                        setTimeout(() => formContext.ui.clearFormNotification("PDF_FAILED"), 8000);
-                        console.error("[ConstructSafe] PDF generation failed:", request.status, request.responseText);
-                    }
+            return __awaiter(this, void 0, void 0, function* () {
+                var _a;
+                const formContext = primaryControl;
+                // Ensure record is saved before generating PDF
+                if (formContext.data.entity.getIsDirty()) {
+                    formContext.ui.setFormNotification("Please save the record before generating a PDF report.", "WARNING", "PDF_SAVE_FIRST");
+                    setTimeout(() => formContext.ui.clearFormNotification("PDF_SAVE_FIRST"), 5000);
+                    return;
                 }
-            };
-            request.onerror = function () {
-                // onerror fires on network/CORS issues - same as status 0 case
-                Xrm.Utility.closeProgressIndicator();
-                formContext.ui.setFormNotification("Report is being generated. Please refresh the Timeline in a few seconds.", "INFO", "PDF_GENERATED");
-                setTimeout(() => {
-                    formContext.ui.clearFormNotification("PDF_GENERATED");
-                    formContext.data.refresh(false);
-                }, 5000);
-                console.log("[ConstructSafe] CORS/network error - flow was still triggered.");
-            };
-            request.send(JSON.stringify({
-                ncId: recordId,
-                ticketNumber: ticketNumber
-            }));
-            console.log("[ConstructSafe] PDF generation request sent for record:", recordId);
+                const recordId = formContext.data.entity.getId().replace(/[{}]/g, "");
+                const ticketNumber = ((_a = formContext.getAttribute(Fields.TICKET_NUMBER)) === null || _a === void 0 ? void 0 : _a.getValue()) || "report";
+                Xrm.Utility.showProgressIndicator("Fetching configuration...");
+                // NOTE: Technical requirement from assignment - Professional secret management.
+                // We fetch the Flow URL from a Dataverse Environment Variable.
+                // Schema name: new_PDFGenerationFlowURL
+                const flowUrl = yield getEnvironmentVariable("new_PDFGenerationFlowURL");
+                if (!flowUrl) {
+                    Xrm.Utility.closeProgressIndicator();
+                    formContext.ui.setFormNotification("PDF generation failed: Flow URL not found in environment settings (new_PDFGenerationFlowURL).", "ERROR", "PDF_NO_URL");
+                    return;
+                }
+                Xrm.Utility.showProgressIndicator("Generating report...");
+                const request = new XMLHttpRequest();
+                request.open("POST", flowUrl, true);
+                request.setRequestHeader("Content-Type", "application/json");
+                request.onreadystatechange = function () {
+                    if (request.readyState === 4) {
+                        Xrm.Utility.closeProgressIndicator();
+                        if (request.status === 200 || request.status === 202) {
+                            formContext.ui.setFormNotification("PDF report generated successfully. Check the Timeline for the attachment.", "INFO", "PDF_GENERATED");
+                            formContext.data.refresh(false);
+                            setTimeout(() => formContext.ui.clearFormNotification("PDF_GENERATED"), 8000);
+                        }
+                        else if (request.status === 0) {
+                            // CORS blocks reading the response, but the flow was triggered successfully.
+                            formContext.ui.setFormNotification("Report is being generated. Please refresh the Timeline in a few seconds.", "INFO", "PDF_GENERATED");
+                            setTimeout(() => {
+                                formContext.ui.clearFormNotification("PDF_GENERATED");
+                                formContext.data.refresh(false);
+                            }, 5000);
+                            console.log("[ConstructSafe] CORS blocked response (expected) - flow was triggered.");
+                        }
+                        else {
+                            formContext.ui.setFormNotification("PDF generation failed. Check if the Flow URL is valid.", "ERROR", "PDF_FAILED");
+                            setTimeout(() => formContext.ui.clearFormNotification("PDF_FAILED"), 8000);
+                            console.error("[ConstructSafe] PDF generation failed:", request.status, request.responseText);
+                        }
+                    }
+                };
+                request.onerror = function () {
+                    Xrm.Utility.closeProgressIndicator();
+                    formContext.ui.setFormNotification("Report is being generated. Please refresh the Timeline in a few seconds.", "INFO", "PDF_GENERATED");
+                    setTimeout(() => {
+                        formContext.ui.clearFormNotification("PDF_GENERATED");
+                        formContext.data.refresh(false);
+                    }, 5000);
+                };
+                request.send(JSON.stringify({
+                    ncId: recordId,
+                    ticketNumber: ticketNumber
+                }));
+                console.log("[ConstructSafe] PDF generation request sent for record:", recordId);
+            });
         }
         NonConformity.generatePDF = generatePDF;
         // =====================================================
@@ -252,6 +265,30 @@ var ConstructSafe;
         // =====================================================
         // HELPER FUNCTIONS
         // =====================================================
+        /**
+         * Retrieves the value of an Environment Variable from Dataverse.
+         * @param variableName - The schema name of the Environment Variable Definition.
+         * @returns A promise that resolves to the variable value.
+         */
+        function getEnvironmentVariable(variableName) {
+            return __awaiter(this, void 0, void 0, function* () {
+                try {
+                    const results = yield Xrm.WebApi.retrieveMultipleRecords("environmentvariabledefinition", `?$filter=schemaname eq '${variableName}'&$expand=environmentvariabledefinition_environmentvariablevalue($select=value)`);
+                    if (results && results.entities.length > 0) {
+                        const definition = results.entities[0];
+                        if (definition.environmentvariabledefinition_environmentvariablevalue &&
+                            definition.environmentvariabledefinition_environmentvariablevalue.length > 0) {
+                            return definition.environmentvariabledefinition_environmentvariablevalue[0].value;
+                        }
+                        return definition.defaultvalue || null;
+                    }
+                }
+                catch (error) {
+                    console.error("[ConstructSafe] Error fetching environment variable:", error);
+                }
+                return null;
+            });
+        }
         /**
          * Sets the Date Reported field to current date/time for new records.
          */

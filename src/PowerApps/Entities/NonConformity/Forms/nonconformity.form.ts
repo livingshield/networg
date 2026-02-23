@@ -140,12 +140,12 @@ namespace ConstructSafe.NonConformity {
     /**
      * Triggers the Power Automate flow to generate a PDF summary report.
      * Called from a Command Bar button on the Non-Conformity form.
-     *
-     * The flow URL must be updated after creating the Power Automate flow.
+     * 
+     * Now fetches the URL from a Dataverse Environment Variable named 'new_PDFGenerationFlowURL'.
      *
      * @param primaryControl - The form context passed by Command Bar
      */
-    export function generatePDF(primaryControl: Xrm.FormContext): void {
+    export async function generatePDF(primaryControl: Xrm.FormContext): Promise<void> {
         const formContext = primaryControl;
 
         // Ensure record is saved before generating PDF
@@ -162,11 +162,22 @@ namespace ConstructSafe.NonConformity {
         const recordId = formContext.data.entity.getId().replace(/[{}]/g, "");
         const ticketNumber = formContext.getAttribute(Fields.TICKET_NUMBER)?.getValue() || "report";
 
-        // NOTE: This URL is the Power Automate HTTP trigger endpoint.
-        // Obtain it from: Power Automate → Generate NC PDF Report → HTTP trigger → "Copy POST URL"
-        // Do NOT commit the actual URL to source control (it contains a secret signature).
-        // Store it in .env as POWER_AUTOMATE_PDF_FLOW_URL and paste the value here before building.
-        const flowUrl = "https://REPLACE_WITH_ENVIRONMENT_VARIABLE";
+        Xrm.Utility.showProgressIndicator("Fetching configuration...");
+
+        // NOTE: Technical requirement from assignment - Professional secret management.
+        // We fetch the Flow URL from a Dataverse Environment Variable.
+        // Schema name: new_PDFGenerationFlowURL
+        const flowUrl = await getEnvironmentVariable("new_PDFGenerationFlowURL");
+
+        if (!flowUrl) {
+            Xrm.Utility.closeProgressIndicator();
+            formContext.ui.setFormNotification(
+                "PDF generation failed: Flow URL not found in environment settings (new_PDFGenerationFlowURL).",
+                "ERROR",
+                "PDF_NO_URL"
+            );
+            return;
+        }
 
         Xrm.Utility.showProgressIndicator("Generating report...");
 
@@ -188,7 +199,6 @@ namespace ConstructSafe.NonConformity {
                     setTimeout(() => formContext.ui.clearFormNotification("PDF_GENERATED"), 8000);
                 } else if (request.status === 0) {
                     // CORS blocks reading the response, but the flow was triggered successfully.
-                    // Power Automate does not handle OPTIONS preflight - this is expected behaviour.
                     formContext.ui.setFormNotification(
                         "Report is being generated. Please refresh the Timeline in a few seconds.",
                         "INFO",
@@ -201,7 +211,7 @@ namespace ConstructSafe.NonConformity {
                     console.log("[ConstructSafe] CORS blocked response (expected) - flow was triggered.");
                 } else {
                     formContext.ui.setFormNotification(
-                        "PDF generation failed. Please try again or contact your administrator.",
+                        "PDF generation failed. Check if the Flow URL is valid.",
                         "ERROR",
                         "PDF_FAILED"
                     );
@@ -212,7 +222,6 @@ namespace ConstructSafe.NonConformity {
         };
 
         request.onerror = function (): void {
-            // onerror fires on network/CORS issues - same as status 0 case
             Xrm.Utility.closeProgressIndicator();
             formContext.ui.setFormNotification(
                 "Report is being generated. Please refresh the Timeline in a few seconds.",
@@ -223,7 +232,6 @@ namespace ConstructSafe.NonConformity {
                 formContext.ui.clearFormNotification("PDF_GENERATED");
                 formContext.data.refresh(false);
             }, 5000);
-            console.log("[ConstructSafe] CORS/network error - flow was still triggered.");
         };
 
         request.send(JSON.stringify({
@@ -304,6 +312,30 @@ namespace ConstructSafe.NonConformity {
     // =====================================================
     // HELPER FUNCTIONS
     // =====================================================
+
+    /**
+     * Retrieves the value of an Environment Variable from Dataverse.
+     * @param variableName - The schema name of the Environment Variable Definition.
+     * @returns A promise that resolves to the variable value.
+     */
+    async function getEnvironmentVariable(variableName: string): Promise<string | null> {
+        try {
+            const results = await Xrm.WebApi.retrieveMultipleRecords("environmentvariabledefinition",
+                `?$filter=schemaname eq '${variableName}'&$expand=environmentvariabledefinition_environmentvariablevalue($select=value)`);
+
+            if (results && results.entities.length > 0) {
+                const definition = results.entities[0];
+                if (definition.environmentvariabledefinition_environmentvariablevalue &&
+                    definition.environmentvariabledefinition_environmentvariablevalue.length > 0) {
+                    return definition.environmentvariabledefinition_environmentvariablevalue[0].value;
+                }
+                return definition.defaultvalue || null;
+            }
+        } catch (error) {
+            console.error("[ConstructSafe] Error fetching environment variable:", error);
+        }
+        return null;
+    }
 
     /**
      * Sets the Date Reported field to current date/time for new records.

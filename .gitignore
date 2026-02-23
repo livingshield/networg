@@ -21,4 +21,4 @@ Thumbs.db
 .DS_Store
 
 # Power Platform managed solution builds (large zips)
-solutions/Managed_Builds/*.zip
+# solutions/Managed_Builds/*.zip
